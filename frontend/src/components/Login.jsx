@@ -1,6 +1,50 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom'
+
+const API_URL = "http://localhost:8000/api";
 
 function Login() {
+
+  const nav = useNavigate();
+
+  const [form, setForm] = useState({
+    email: "",
+    password: ""
+  });
+
+  const handleOnChange = (e) => setForm({...form, [e.target.name]: e.target.value});
+
+  const handleSubmitHandler = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(`${API_URL}/token/`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert("Error!");
+        return;
+      }
+
+      localStorage.setItem("access", data.access);
+      localStorage.setItem("refresh", data.refresh);
+
+      alert("Successfully logged in!");
+      setForm({email: "", password: ""}); // resetting the form values.
+      nav('/testpage');
+    } catch (err) {
+      alert(err);
+    }
+  }
+  
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center px-4 py-12">
       {/* Top Logo */}
@@ -21,7 +65,7 @@ function Login() {
         </p>
 
         {/* Login Form */}
-        <form className="mt-6 space-y-4">
+        <form className="mt-6 space-y-4" onSubmit={handleSubmitHandler}>
           {/* Email Field */}
           <div>
             <label
@@ -36,6 +80,8 @@ function Login() {
               required
               placeholder="you@example.com"
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent text-sm"
+              name="email"
+              onChange={handleOnChange}
             />
           </div>
 
@@ -53,6 +99,8 @@ function Login() {
               required
               placeholder="••••••••"
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent text-sm"
+              name="password"
+              onChange={handleOnChange}
             />
           </div>
 

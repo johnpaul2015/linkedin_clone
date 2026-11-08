@@ -1,6 +1,49 @@
-import { Link } from 'react-router-dom'
+import { useState } from "react";
+import { Link } from "react-router-dom";
+
+const API_URL = "http://localhost:8000/api";
 
 function Register() {
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const handleOnChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleOnSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const res = await fetch(`${API_URL}/register/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: form.username,
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      const data = await res.json();
+
+      // console.log(data)
+
+      if (!res.ok) {
+        alert("Error!");
+        return;
+      }
+
+      setForm({ username: "", email: "", password: "", confirmPassword: "" });
+      alert("Success!");
+    } catch (err) {
+      alert(err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center px-4 py-12">
       {/* Top Logo */}
@@ -15,20 +58,22 @@ function Register() {
 
       {/* Centered Registration Card */}
       <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Create your account
+        </h1>
         <p className="mt-2 text-sm text-gray-600">
           Join Connectly and grow your professional network.
         </p>
 
         {/* Registration Form */}
-        <form className="mt-6 space-y-4">
+        <form className="mt-6 space-y-4" onSubmit={handleOnSubmit}>
           {/* Full Name Field */}
           <div>
             <label
               htmlFor="fullName"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Full Name
+              Username
             </label>
             <input
               id="fullName"
@@ -36,6 +81,9 @@ function Register() {
               required
               placeholder="Jane Doe"
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent text-sm"
+              name="username"
+              value={form.username}
+              onChange={handleOnChange}
             />
           </div>
 
@@ -53,6 +101,9 @@ function Register() {
               required
               placeholder="you@example.com"
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent text-sm"
+              name="email"
+              value={form.email}
+              onChange={handleOnChange}
             />
           </div>
 
@@ -70,6 +121,9 @@ function Register() {
               required
               placeholder="••••••••"
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent text-sm"
+              name="password"
+              value={form.password}
+              onChange={handleOnChange}
             />
           </div>
 
@@ -87,6 +141,9 @@ function Register() {
               required
               placeholder="••••••••"
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent text-sm"
+              name="confirmPassword"
+              value={form.confirmPassword}
+              onChange={handleOnChange}
             />
           </div>
 
@@ -101,7 +158,7 @@ function Register() {
 
         {/* Log In Redirect Link */}
         <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{' '}
+          Already have an account?{" "}
           <Link
             to="/login"
             className="text-[#0A66C2] font-medium hover:underline"
@@ -121,7 +178,7 @@ function Register() {
         </Link>
       </div>
     </div>
-  )
+  );
 }
 
-export default Register
+export default Register;

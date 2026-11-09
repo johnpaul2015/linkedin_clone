@@ -39,7 +39,7 @@ function Login() {
 
       alert("Successfully logged in!");
       setForm({email: "", password: ""}); // resetting the form values.
-      nav('/testpage');
+      nav('/testpage'); // redirect to the '/testpage' after successfully logging in.
     } catch (err) {
       alert(err);
     }

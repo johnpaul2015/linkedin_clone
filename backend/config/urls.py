@@ -17,8 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+# group similar urls (/api/)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("accounts.urls")), # account related urls (api/register, api/profile).
-    path("", include("accounts.token_urls")) # token related urls (api/token, api/refresh, api/verify).
+    path("", include("accounts.token_urls")), # token related urls (api/token, api/refresh, api/verify).
+    path("", include("profiles.urls")),
 ]

@@ -23,4 +23,5 @@ urlpatterns = [
     path("", include("accounts.urls")), # account related urls (api/register, api/profile).
     path("", include("accounts.token_urls")), # token related urls (api/token, api/refresh, api/verify).
     path("", include("profiles.urls")),
+    path("", include("connections.urls")),
 ]

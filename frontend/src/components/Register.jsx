@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-const API_URL = "http://localhost:8000/api";
+const API_URL = "http://127.0.0.1:8000/api";
 
 function Register() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -11,11 +13,29 @@ function Register() {
     confirmPassword: "",
   });
 
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const handleOnChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleOnSubmit = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    if (form.password !== form.confirmPassword) {
+      setErrorMsg("Passwords do not match!");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      setErrorMsg("Password must be at least 8 characters long.");
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch(`${API_URL}/register/`, {
@@ -30,17 +50,25 @@ function Register() {
 
       const data = await res.json();
 
-      // console.log(data)
-
       if (!res.ok) {
-        alert("Error!");
+        let msg = "Registration failed.";
+        if (typeof data === "object" && data !== null) {
+          msg = Object.values(data).flat().join(" ");
+        }
+        setErrorMsg(msg);
+        setLoading(false);
         return;
       }
 
       setForm({ username: "", email: "", password: "", confirmPassword: "" });
-      alert("Success!");
+      setSuccessMsg("Registration successful! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
     } catch (err) {
-      alert(err);
+      setErrorMsg("Failed to connect to the server. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -65,18 +93,31 @@ function Register() {
           Join Connectly and grow your professional network.
         </p>
 
+        {/* Feedback Banners */}
+        {errorMsg && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg text-center">
+            {errorMsg}
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg text-center">
+            {successMsg}
+          </div>
+        )}
+
         {/* Registration Form */}
         <form className="mt-6 space-y-4" onSubmit={handleOnSubmit}>
-          {/* Full Name Field */}
+          {/* Username Field */}
           <div>
             <label
-              htmlFor="fullName"
+              htmlFor="username"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
               Username
             </label>
             <input
-              id="fullName"
+              id="username"
               type="text"
               required
               placeholder="Jane Doe"
@@ -150,9 +191,10 @@ function Register() {
           {/* Sign Up Button */}
           <button
             type="submit"
-            className="w-full bg-[#0A66C2] hover:bg-[#084e96] text-white font-medium py-3 px-4 rounded-full transition-colors shadow-sm text-sm"
+            disabled={loading || Boolean(successMsg)}
+            className="w-full bg-[#0A66C2] hover:bg-[#084e96] disabled:bg-blue-300 text-white font-medium py-3 px-4 rounded-full transition-colors shadow-sm text-sm"
           >
-            Sign Up
+            {loading ? "Signing Up..." : "Sign Up"}
           </button>
         </form>
 

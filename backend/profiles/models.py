@@ -27,3 +27,5 @@ class Experience(models.Model):
 
     def __str__(self):
         return self.user.username + '-' + self.company
+
+from connections.models import Connection  # Re-export for convenience

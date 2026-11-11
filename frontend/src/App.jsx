@@ -6,7 +6,9 @@ import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import Login from "./components/Login";
 import Register from "./components/Register";
-import TestPage from "./components/TestPage";
+import ProfileSetup from "./components/ProfileSetup";
+import Dashboard from "./components/Dashboard";
+import Network from "./components/Network";
 
 function LandingPage() {
   return (
@@ -27,7 +29,10 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/testpage" element={<TestPage />} />
+        <Route path="/profile-setup" element={<ProfileSetup />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/network" element={<Network />} />
+        <Route path="/testpage" element={<Dashboard />} />
       </Routes>
     </div>
   );

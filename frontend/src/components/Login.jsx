@@ -1,50 +1,86 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom';
 
-const API_URL = "http://localhost:8000/api";
+const API_BASE = "http://127.0.0.1:8000";
 
 function Login() {
-
-  const nav = useNavigate();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     email: "",
-    password: ""
+    password: "",
   });
 
-  const handleOnChange = (e) => setForm({...form, [e.target.name]: e.target.value});
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleOnChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmitHandler = async (e) => {
     e.preventDefault();
+    setErrorMsg("");
+    setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/token/`, {
+      const res = await fetch(`${API_BASE}/api/token/`, {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: form.email,
-          password: form.password
-        })
+          password: form.password,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        alert("Error!");
+        let msg = "Invalid email or password.";
+        if (typeof data === "object" && data !== null) {
+          msg = Object.values(data).flat().join(" ");
+        }
+        setErrorMsg(msg);
+        setLoading(false);
         return;
       }
 
+      // Store tokens exactly as currently implemented
       localStorage.setItem("access", data.access);
       localStorage.setItem("refresh", data.refresh);
 
-      alert("Successfully logged in!");
-      setForm({email: "", password: ""}); // resetting the form values.
-      nav('/testpage'); // redirect to the '/testpage' after successfully logging in.
+      // Check whether user already has a profile via /api/profiles/me/
+      try {
+        const profileRes = await fetch(`${API_BASE}/api/profiles/me/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${data.access}`,
+          },
+        });
+
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          // If response is an empty array, navigate to profile setup
+          if (Array.isArray(profileData) && profileData.length === 0) {
+            navigate("/profile-setup");
+          } else {
+            // User already has a profile, navigate to dashboard
+            navigate("/dashboard");
+          }
+        } else {
+          // If profile check returns an error status, keep tokens and navigate to dashboard
+          navigate("/dashboard");
+        }
+      } catch (profileErr) {
+        // If network issue during profile check, keep tokens and navigate to dashboard
+        navigate("/dashboard");
+      }
     } catch (err) {
-      alert(err);
+      setErrorMsg("Failed to connect to the server. Please check your connection.");
+    } finally {
+      setLoading(false);
     }
-  }
-  
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center px-4 py-12">
       {/* Top Logo */}
@@ -64,6 +100,13 @@ function Login() {
           Log in to continue to Connectly.
         </p>
 
+        {/* Error Feedback Banner */}
+        {errorMsg && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg text-center">
+            {errorMsg}
+          </div>
+        )}
+
         {/* Login Form */}
         <form className="mt-6 space-y-4" onSubmit={handleSubmitHandler}>
           {/* Email Field */}
@@ -81,6 +124,7 @@ function Login() {
               placeholder="you@example.com"
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent text-sm"
               name="email"
+              value={form.email}
               onChange={handleOnChange}
             />
           </div>
@@ -100,6 +144,7 @@ function Login() {
               placeholder="••••••••"
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0A66C2] focus:border-transparent text-sm"
               name="password"
+              value={form.password}
               onChange={handleOnChange}
             />
           </div>
@@ -107,9 +152,10 @@ function Login() {
           {/* Login Button */}
           <button
             type="submit"
-            className="w-full bg-[#0A66C2] hover:bg-[#084e96] text-white font-medium py-3 px-4 rounded-full transition-colors shadow-sm text-sm"
+            disabled={loading}
+            className="w-full bg-[#0A66C2] hover:bg-[#084e96] disabled:bg-blue-300 text-white font-medium py-3 px-4 rounded-full transition-colors shadow-sm text-sm"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
@@ -135,7 +181,7 @@ function Login() {
         </Link>
       </div>
     </div>
-  )
+  );
 }
 
-export default Login
+export default Login;

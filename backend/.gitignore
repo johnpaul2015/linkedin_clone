@@ -1,7 +1,14 @@
-# folders
+# Virtual environments
 venv/
-__pycache__/
-migrations/
+.venv/
 
-# files
+# Python
+__pycache__/
+*.py[cod]
+
+# Database
 db.sqlite3
+db_backup.sqlite3
+
+# Environment variables
+.env

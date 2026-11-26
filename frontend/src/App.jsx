@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import About from "./components/About";
@@ -9,6 +9,14 @@ import Register from "./components/Register";
 import ProfileSetup from "./components/ProfileSetup";
 import Dashboard from "./components/Dashboard";
 import Network from "./components/Network";
+
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem("access");
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
 
 function LandingPage() {
   return (
@@ -29,10 +37,38 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/profile-setup" element={<ProfileSetup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/network" element={<Network />} />
-        <Route path="/testpage" element={<Dashboard />} />
+        <Route
+          path="/profile-setup"
+          element={
+            <ProtectedRoute>
+              <ProfileSetup />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/network"
+          element={
+            <ProtectedRoute>
+              <Network />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/testpage"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </div>
   );

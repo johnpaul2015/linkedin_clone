@@ -40,7 +40,8 @@ function Network() {
   // 1. Fetch Users (Discover)
   const fetchUsers = useCallback(
     async (searchTerm = "", pageNum = 1) => {
-      if (!token) return handleAuthError();
+      const activeToken = localStorage.getItem("access");
+      if (!activeToken) return handleAuthError();
       setLoadingUsers(true);
       setErrorMsg("");
 
@@ -56,7 +57,7 @@ function Network() {
         const url = `${API_BASE}/users/${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
         const res = await fetch(url, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${activeToken}`,
           },
         });
 
@@ -72,27 +73,28 @@ function Network() {
           setHasNextPage(Boolean(data.next));
           setHasPrevPage(Boolean(data.previous));
         } else {
-          setErrorMsg("Failed to load user suggestions.");
+          setErrorMsg("Failed to load user suggestions from server.");
         }
       } catch (err) {
         console.error("Error fetching users:", err);
-        setErrorMsg("Network error: Could not reach the server.");
+        setErrorMsg("Unable to connect to the Connectly server. Please verify that the backend is running at http://127.0.0.1:8000.");
       } finally {
         setLoadingUsers(false);
       }
     },
-    [token, handleAuthError]
+    [handleAuthError]
   );
 
   // 2. Fetch Incoming Connection Requests
   const fetchInvitations = useCallback(async () => {
-    if (!token) return handleAuthError();
+    const activeToken = localStorage.getItem("access");
+    if (!activeToken) return handleAuthError();
     setLoadingInvitations(true);
 
     try {
       const res = await fetch(`${API_BASE}/connections/requests/`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${activeToken}`,
         },
       });
 
@@ -110,20 +112,22 @@ function Network() {
       }
     } catch (err) {
       console.error("Error fetching invitations:", err);
+      setErrorMsg((prev) => prev || "Unable to connect to the Connectly server. Please verify that the backend is running at http://127.0.0.1:8000.");
     } finally {
       setLoadingInvitations(false);
     }
-  }, [token, handleAuthError]);
+  }, [handleAuthError]);
 
   // 3. Fetch Accepted Connections
   const fetchConnections = useCallback(async () => {
-    if (!token) return handleAuthError();
+    const activeToken = localStorage.getItem("access");
+    if (!activeToken) return handleAuthError();
     setLoadingConnections(true);
 
     try {
       const res = await fetch(`${API_BASE}/connections/`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${activeToken}`,
         },
       });
 
@@ -140,21 +144,23 @@ function Network() {
       }
     } catch (err) {
       console.error("Error fetching connections:", err);
+      setErrorMsg((prev) => prev || "Unable to connect to the Connectly server. Please verify that the backend is running at http://127.0.0.1:8000.");
     } finally {
       setLoadingConnections(false);
     }
-  }, [token, handleAuthError]);
+  }, [handleAuthError]);
 
   // Initial Load
   useEffect(() => {
-    if (!token) {
+    const activeToken = localStorage.getItem("access");
+    if (!activeToken) {
       navigate("/login");
       return;
     }
     fetchUsers(activeSearch, page);
     fetchInvitations();
     fetchConnections();
-  }, [token, navigate, fetchUsers, fetchInvitations, fetchConnections, activeSearch, page]);
+  }, [navigate, fetchUsers, fetchInvitations, fetchConnections, activeSearch, page]);
 
   // Action: Search Submission
   const handleSearchSubmit = (e) => {
@@ -419,14 +425,42 @@ function Network() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Banner Alerts */}
         {errorMsg && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-center justify-between">
-            <span>{errorMsg}</span>
-            <button
-              onClick={() => setErrorMsg("")}
-              className="font-bold ml-2 text-red-500 hover:text-red-800"
-            >
-              &times;
-            </button>
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <svg
+                className="w-5 h-5 text-red-500 shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span>{errorMsg}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setErrorMsg("");
+                  fetchUsers(activeSearch, page);
+                  fetchInvitations();
+                  fetchConnections();
+                }}
+                className="text-xs font-semibold px-2.5 py-1 bg-red-100 hover:bg-red-200 text-red-800 rounded-md transition-colors"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => setErrorMsg("")}
+                className="font-bold text-red-500 hover:text-red-800 text-lg leading-none"
+              >
+                &times;
+              </button>
+            </div>
           </div>
         )}
 
@@ -659,7 +693,28 @@ function Network() {
                 </div>
               ) : users.length === 0 ? (
                 <div className="py-8 text-center text-sm text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                  No professionals found matching your search.
+                  {activeSearch ? (
+                    <>
+                      <p className="font-semibold text-gray-800">No professionals found</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        No matches found for &ldquo;{activeSearch}&rdquo;. Try another name, headline, or location.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleClearSearch}
+                        className="mt-3 px-3.5 py-1.5 text-xs font-semibold text-[#0A66C2] bg-blue-50 hover:bg-blue-100 rounded-full transition-colors"
+                      >
+                        Clear search filter
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-semibold text-gray-800">No suggestions available</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        You have seen all current members! As more professionals join Connectly, they will appear here.
+                      </p>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
